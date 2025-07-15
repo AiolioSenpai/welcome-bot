@@ -47,7 +47,7 @@ async def on_member_join(member):
             description=f"{greeting} and welcome to Regal Pride, {member.mention}! Feel free to introduce yourself.",
             color=discord.Color.green()
         )
-        embed.set_image(url="https://tenor.com/bMEhC.gif")  
+        embed.set_image(url="https://i.imgur.com/Ev3QHn2.gif")  
         await welcome_channel.send(embed=embed)
 
     # ✅ 2. DM the rules/guide
