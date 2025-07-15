@@ -1,6 +1,11 @@
 import discord
 import os
 from dotenv import load_dotenv
+from datetime import datetime
+
+# You can choose your timezone offset from UTC, for example UTC+2:
+TIMEZONE_OFFSET = 2
+
 
 load_dotenv()
 
@@ -23,15 +28,26 @@ async def on_ready():
 async def on_member_join(member):
     guild = client.get_guild(GUILD_ID)
     welcome_channel = guild.get_channel(WELCOME_CHANNEL_ID)
+    
+    # Get current UTC hour, add offset, wrap around 24h
+    hour_utc = datetime.utcnow().hour
+    local_hour = (hour_utc + TIMEZONE_OFFSET) % 24
+    
+    if 5 <= local_hour < 12:
+        greeting = "Good morning"
+    elif 12 <= local_hour < 18:
+        greeting = "Good afternoon"
+    else:
+        greeting = "Good evening"
 
-    # ✅ 1. Send welcome message in channel
+    # Use greeting in your message:
     if welcome_channel:
         embed = discord.Embed(
-            title="🎉  Welcome new Lord! 🎉 ",
-            description=f"Welcome to Regal Pride, {member.mention}! Feel free to introduce yourself.",
+            title=f"🎉 {greeting}, new Lord! 🎉",
+            description=f"{greeting} and welcome to Regal Pride, {member.mention}! Feel free to introduce yourself.",
             color=discord.Color.green()
         )
-        embed.set_image(url="https://tenor.com/fr/view/dumbledore-cheers-harry-potter-gif-23948582")  
+        embed.set_image(url="https://tenor.com/bMEhC.gif")  
         await welcome_channel.send(embed=embed)
 
     # ✅ 2. DM the rules/guide
@@ -41,7 +57,7 @@ async def on_member_join(member):
             "I hope you like it here\n"
             "Here are the rules:\n"
             "1️⃣ Be respectful\n"
-            "2️⃣ No Harressment or bad behaviour is tolerated\n"
+            "2️⃣ No Harassment or bad behaviour is tolerated\n"
             "3️⃣ Have fun!\n\n"
             "Check out #next-events to see the upcoming events in KC posted by Hagrid ;)"
         )
