@@ -87,7 +87,7 @@ async def on_message(message):
         if member.guild_permissions.administrator:
             announcement = message.content[len("!announce"):].strip()
             if announcement:
-                await message.channel.send(f"📢 {announcement}")
+                await message.channel.send(f" {announcement}")
                 await message.delete()  # delete the command message after reading
                 print(f"✅ Announcement made by {member.name}: {announcement}")
             else:
