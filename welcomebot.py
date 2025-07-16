@@ -11,7 +11,7 @@ load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 WELCOME_CHANNEL_ID = int(os.getenv("WELCOME_CHANNEL_ID"))
 GUILD_ID = int(os.getenv("GUILD_ID"))
-ROLE_NAME = os.getenv("ROLE_NAME")
+ROLE_NAME = int(os.getenv("ROLE_NAME"))
 ANNOUNCE_CHANNEL_ID = int(os.getenv("ANNOUNCE_CHANNEL_ID"))  # Ensure you set this in your .env
 
 intents = discord.Intents.default()
@@ -64,7 +64,7 @@ async def on_member_join(member):
     except discord.Forbidden:
         print(f"Could not DM {member.name}.")
 
-    role = discord.utils.get(guild.roles, name=ROLE_NAME)
+    role = guild.get_role(ROLE_NAME)
     if role:
         try:
             await member.add_roles(role)
