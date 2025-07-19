@@ -24,8 +24,6 @@ intents.dm_messages = True  # Ensure DM intents are enabled
 
 client = discord.Client(intents=intents)
 
-pending_replies = {}  # message_id: user
-
 @client.event
 async def on_ready():
     print(f"✅ Logged in as {client.user}")
@@ -83,7 +81,35 @@ async def on_message(message):
     if message.author.bot:
         return
 
-    # Handle announce command
+    # === DM Handling ===
+    if message.guild is None:
+        if message.author.id != OWNER_ID:
+            owner = await client.fetch_user(OWNER_ID)
+            await owner.send(f"📨 New DM from **{message.author}** (ID: {message.author.id}):\n{message.content}")
+            return
+
+        # Owner sent a DM to the bot - parse reply command
+        if message.author.id == OWNER_ID:
+            if message.content.startswith("reply"):
+                parts = message.content.split(" ", 2)
+                if len(parts) < 3:
+                    await message.channel.send("Usage: reply <USER_ID> <message>")
+                    return
+                try:
+                    user_id = int(parts[1])
+                except ValueError:
+                    await message.channel.send("Invalid USER_ID. It must be an integer.")
+                    return
+                user_message = parts[2]
+                try:
+                    user = await client.fetch_user(user_id)
+                    await user.send(user_message)
+                    await message.channel.send(f"✅ Message sent to {user} (ID: {user_id})")
+                except Exception as e:
+                    await message.channel.send(f"❌ Failed to send message: {e}")
+            return
+
+    # === Handle announce command ===
     if message.content.startswith("!announce") and message.channel.id == ANNOUNCE_CHANNEL_ID:
         guild = message.guild
         member = message.author
@@ -98,31 +124,5 @@ async def on_message(message):
                 await message.channel.send("⚠️ Please provide a message to announce.")
         else:
             await message.channel.send("❌ You do not have permission to use this command.")
-
-    # DM relay system
-    if isinstance(message.channel, discord.DMChannel):
-        owner = await client.fetch_user(OWNER_ID)
-        relay = (
-            f"📩 **DM received:**\n"
-            f"From: {message.author} ({message.author.id})\n"
-            f"Content: {message.content}"
-        )
-        sent = await owner.send(relay)
-        pending_replies[sent.id] = message.author.id
-        print(f"✅ DM relayed from {message.author} to owner.")
-
-    # Owner replying to the bot relay to respond to the user
-    if message.author.id == OWNER_ID and message.reference:
-        replied_message = await message.channel.fetch_message(message.reference.message_id)
-        if replied_message.id in pending_replies:
-            user_id = pending_replies[replied_message.id]
-            user = await client.fetch_user(user_id)
-            try:
-                await user.send(message.content)
-                await message.channel.send(f"✅ Replied to {user}.")
-                print(f"✅ Reply sent to {user}.")
-            except discord.Forbidden:
-                await message.channel.send(f"❌ Cannot DM {user}.")
-                print(f"❌ Cannot DM {user}.")
 
 client.run(TOKEN)
