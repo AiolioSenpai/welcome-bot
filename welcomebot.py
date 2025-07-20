@@ -2,6 +2,8 @@ import discord
 import os
 from dotenv import load_dotenv
 from datetime import datetime
+import random
+import asyncio
 
 # You can choose your timezone offset from UTC, for example UTC+2:
 TIMEZONE_OFFSET = 2
@@ -124,5 +126,36 @@ async def on_message(message):
                 await message.channel.send("⚠️ Please provide a message to announce.")
         else:
             await message.channel.send("❌ You do not have permission to use this command.")
+
+async def status_loop():
+    day_statuses = [
+        "🪄 Teaching Transfiguration",
+        "📚 Reading the Daily Prophet",
+        "🏰 Walking around Hogwarts",
+        "🦉 Waiting for the owl post"
+    ]
+
+    night_statuses = [
+        "🌙 Watching the stars over Hogwarts",
+        "💤 Sleeping in the Headmaster’s Tower",
+        "🔮 Dreaming of lemon drops"
+    ]
+
+    while True:
+        hour_utc = datetime.utcnow().hour
+        local_hour = (hour_utc + TIMEZONE_OFFSET) % 24
+
+        if 6 <= local_hour < 22:
+            # Day time
+            status_message = random.choice(day_statuses)
+        else:
+            # Night time
+            status_message = random.choice(night_statuses)
+
+        activity = discord.Game(status_message)
+        await client.change_presence(activity=activity)
+
+        await asyncio.sleep(7200)  # Sleep for 30 minutes before updating again
+
 
 client.run(TOKEN)
