@@ -29,6 +29,7 @@ client = discord.Client(intents=intents)
 @client.event
 async def on_ready():
     print(f"✅ Logged in as {client.user}")
+    client.loop.create_task(status_loop())
 
 @client.event
 async def on_member_join(member):
@@ -155,7 +156,7 @@ async def status_loop():
         activity = discord.Game(status_message)
         await client.change_presence(activity=activity)
 
-        await asyncio.sleep(7200)  # Sleep for 30 minutes before updating again
+        await asyncio.sleep(7200)  # Sleep for 2 hours before updating again
 
 
 client.run(TOKEN)
