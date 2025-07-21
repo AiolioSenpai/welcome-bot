@@ -139,7 +139,7 @@ async def status_loop():
     night_statuses = [
         "🌙 Watching the stars over Hogwarts",
         "💤 Sleeping in the Headmaster’s Tower",
-        "🔮 Dreaming of lemon drops"
+        "🔮 Dreaming of sherbet lemons"
     ]
 
     while True:
