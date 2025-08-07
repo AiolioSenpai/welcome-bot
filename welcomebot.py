@@ -1,9 +1,10 @@
 import discord
 import os
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, timedelta
 import random
 import asyncio
+import re
 
 # You can choose your timezone offset from UTC, for example UTC+2:
 TIMEZONE_OFFSET = 2
@@ -90,7 +91,7 @@ async def on_message(message):
             owner = await client.fetch_user(OWNER_ID)
             await owner.send(f"📨 New DM from **{message.author}** (ID: {message.author.id}):\n{message.content}")
         
-        # Owner sent a DM to the bot - parse reply or announce command
+        # Owner sent a DM to the bot - parse commands
         if message.author.id == OWNER_ID:
             if message.content.startswith("reply"):
                 parts = message.content.split(" ", 2)
@@ -109,6 +110,7 @@ async def on_message(message):
                     await message.channel.send(f"✅ Message sent to {user} (ID: {user_id})")
                 except Exception as e:
                     await message.channel.send(f"❌ Failed to send message: {e}")
+            
             elif message.content.startswith("!announce"):
                 guild = client.get_guild(GUILD_ID)
                 announce_channel = guild.get_channel(ANNOUNCE_CHANNEL_ID)
@@ -126,6 +128,59 @@ async def on_message(message):
                     print(f"✅ DM Announcement made by {message.author.name}: {announcement}")
                 else:
                     await message.channel.send("⚠️ Please provide a message to announce.")
+            
+            elif message.content.startswith("!program"):
+                guild = client.get_guild(GUILD_ID)
+                announce_channel = guild.get_channel(ANNOUNCE_CHANNEL_ID)
+                # Parse command: !program HH:MM "message"
+                match = re.match(r"!program\s+(\d{1,2}:\d{2})\s+\"(.+)\"$", message.content)
+                if not match:
+                    await message.channel.send("Usage: !program HH:MM \"message\" (e.g., !program 14:30 \"Event starts soon!\")")
+                    return
+                
+                time_str, announcement = match.groups()
+                try:
+                    # Parse time in HH:MM format
+                    hours, minutes = map(int, time_str.split(":"))
+                    if not (0 <= hours <= 23 and 0 <= minutes <= 59):
+                        raise ValueError
+                except ValueError:
+                    await message.channel.send("Invalid time format. Use HH:MM (24-hour format).")
+                    return
+
+                # Get current time in UTC and convert to local time
+                now_utc = datetime.utcnow()
+                local_time = now_utc + timedelta(hours=TIMEZONE_OFFSET)
+                target_time = local_time.replace(hour=hours, minute=minutes, second=0, microsecond=0)
+                
+                # If target time is in the past, schedule for next day
+                if target_time <= local_time:
+                    target_time += timedelta(days=1)
+                
+                # Calculate seconds until target time
+                seconds_until = (target_time - local_time).total_seconds()
+                
+                if announcement:
+                    await message.channel.send(f"✅ Scheduled announcement for {target_time.strftime('%H:%M')} (local time).")
+                    print(f"✅ Scheduled announcement by {message.author.name} for {target_time.strftime('%H:%M')}: {announcement}")
+                    
+                    # Schedule the announcement
+                    async def send_scheduled_message():
+                        await asyncio.sleep(seconds_until)
+                        embed = discord.Embed(
+                            title="📢 Scheduled Announcement",
+                            description=announcement,
+                            color=discord.Color.blue(),
+                            timestamp=datetime.utcnow()
+                        )
+                        embed.set_footer(text=f"Scheduled by {message.author.display_name}")
+                        await announce_channel.send(embed=embed)
+                        print(f"✅ Posted scheduled announcement: {announcement}")
+                    
+                    client.loop.create_task(send_scheduled_message())
+                else:
+                    await message.channel.send("⚠️ Please provide a message to announce.")
+            
             return
 
     # === Handle announce command in channel ===
