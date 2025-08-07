@@ -117,12 +117,10 @@ async def on_message(message):
                 announcement = message.content[len("!announce"):].strip()
                 if announcement:
                     embed = discord.Embed(
-                        title="📢 Announcement",
                         description=announcement,
                         color=discord.Color.blue(),
-                        timestamp=datetime.utcnow()
+                        # timestamp=datetime.utcnow()
                     )
-                    embed.set_footer(text=f"Announced by {message.author.display_name}")
                     await announce_channel.send(embed=embed)
                     await message.channel.send("✅ Announcement posted to the channel!")
                     print(f"✅ DM Announcement made by {message.author.name}: {announcement}")
@@ -173,7 +171,6 @@ async def on_message(message):
                             color=discord.Color.blue(),
                             timestamp=datetime.utcnow()
                         )
-                        embed.set_footer(text=f"Scheduled by {message.author.display_name}")
                         await announce_channel.send(embed=embed)
                         print(f"✅ Posted scheduled announcement: {announcement}")
                     
