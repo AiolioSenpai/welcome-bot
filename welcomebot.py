@@ -89,9 +89,8 @@ async def on_message(message):
         if message.author.id != OWNER_ID:
             owner = await client.fetch_user(OWNER_ID)
             await owner.send(f"📨 New DM from **{message.author}** (ID: {message.author.id}):\n{message.content}")
-            return
-
-        # Owner sent a DM to the bot - parse reply command
+        
+        # Owner sent a DM to the bot - parse reply or announce command
         if message.author.id == OWNER_ID:
             if message.content.startswith("reply"):
                 parts = message.content.split(" ", 2)
@@ -110,9 +109,26 @@ async def on_message(message):
                     await message.channel.send(f"✅ Message sent to {user} (ID: {user_id})")
                 except Exception as e:
                     await message.channel.send(f"❌ Failed to send message: {e}")
+            elif message.content.startswith("!announce"):
+                guild = client.get_guild(GUILD_ID)
+                announce_channel = guild.get_channel(ANNOUNCE_CHANNEL_ID)
+                announcement = message.content[len("!announce"):].strip()
+                if announcement:
+                    embed = discord.Embed(
+                        title="📢 Announcement",
+                        description=announcement,
+                        color=discord.Color.blue(),
+                        timestamp=datetime.utcnow()
+                    )
+                    embed.set_footer(text=f"Announced by {message.author.display_name}")
+                    await announce_channel.send(embed=embed)
+                    await message.channel.send("✅ Announcement posted to the channel!")
+                    print(f"✅ DM Announcement made by {message.author.name}: {announcement}")
+                else:
+                    await message.channel.send("⚠️ Please provide a message to announce.")
             return
 
-    # === Handle announce command ===
+    # === Handle announce command in channel ===
     if message.content.startswith("!announce") and message.channel.id == ANNOUNCE_CHANNEL_ID:
         guild = message.guild
         member = message.author
@@ -120,7 +136,14 @@ async def on_message(message):
         if member.guild_permissions.administrator:
             announcement = message.content[len("!announce"):].strip()
             if announcement:
-                await message.channel.send(f"{announcement}")
+                embed = discord.Embed(
+                    title="📢 Announcement",
+                    description=announcement,
+                    color=discord.Color.blue(),
+                    timestamp=datetime.utcnow()
+                )
+                embed.set_footer(text=f"Announced by {member.display_name}")
+                await message.channel.send(embed=embed)
                 await message.delete()
                 print(f"✅ Announcement made by {member.name}: {announcement}")
             else:
@@ -157,6 +180,5 @@ async def status_loop():
         await client.change_presence(activity=activity)
 
         await asyncio.sleep(7200)  # Sleep for 2 hours before updating again
-
 
 client.run(TOKEN)
