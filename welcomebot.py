@@ -6,8 +6,8 @@ import random
 import asyncio
 import re
 
-# You can choose your timezone offset from UTC, for example UTC+2:
-TIMEZONE_OFFSET = 2
+# You can choose your timezone offset from UTC, for example UTC+1:
+TIMEZONE_OFFSET = 1
 
 load_dotenv()
 
