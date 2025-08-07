@@ -116,12 +116,7 @@ async def on_message(message):
                 announce_channel = guild.get_channel(ANNOUNCE_CHANNEL_ID)
                 announcement = message.content[len("!announce"):].strip()
                 if announcement:
-                    embed = discord.Embed(
-                        description=announcement,
-                        color=discord.Color.blue(),
-                        # timestamp=datetime.utcnow()
-                    )
-                    await announce_channel.send(embed=embed)
+                    await announce_channel.send(f"## {announcement}")
                     await message.channel.send("✅ Announcement posted to the channel!")
                     print(f"✅ DM Announcement made by {message.author.name}: {announcement}")
                 else:
@@ -166,8 +161,7 @@ async def on_message(message):
                     async def send_scheduled_message():
                         await asyncio.sleep(seconds_until)
                         embed = discord.Embed(
-                            title="📢 Scheduled Announcement",
-                            description=announcement,
+                            description=f"## {announcement}",
                             color=discord.Color.blue(),
                             timestamp=datetime.utcnow()
                         )
@@ -188,14 +182,7 @@ async def on_message(message):
         if member.guild_permissions.administrator:
             announcement = message.content[len("!announce"):].strip()
             if announcement:
-                embed = discord.Embed(
-                    title="📢 Announcement",
-                    description=announcement,
-                    color=discord.Color.blue(),
-                    timestamp=datetime.utcnow()
-                )
-                embed.set_footer(text=f"Announced by {member.display_name}")
-                await message.channel.send(embed=embed)
+                await message.channel.send(f"## {announcement}")
                 await message.delete()
                 print(f"✅ Announcement made by {member.name}: {announcement}")
             else:
