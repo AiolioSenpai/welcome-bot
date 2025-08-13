@@ -125,7 +125,6 @@ async def on_message(message):
             elif message.content.startswith("!program"):
                 guild = client.get_guild(GUILD_ID)
                 announce_channel = guild.get_channel(ANNOUNCE_CHANNEL_ID)
-                # Parse command: !program HH:MM "message"
                 match = re.match(r"!program\s+(\d{1,2}:\d{2})\s+\"(.+)\"$", message.content)
                 if not match:
                     await message.channel.send("Usage: !program HH:MM \"message\" (e.g., !program 14:30 \"Event starts soon!\")")
@@ -133,7 +132,6 @@ async def on_message(message):
                 
                 time_str, announcement = match.groups()
                 try:
-                    # Parse time in HH:MM format
                     hours, minutes = map(int, time_str.split(":"))
                     if not (0 <= hours <= 23 and 0 <= minutes <= 59):
                         raise ValueError
@@ -141,23 +139,19 @@ async def on_message(message):
                     await message.channel.send("Invalid time format. Use HH:MM (24-hour format).")
                     return
 
-                # Get current time in UTC and convert to local time
                 now_utc = datetime.utcnow()
                 local_time = now_utc + timedelta(hours=TIMEZONE_OFFSET)
                 target_time = local_time.replace(hour=hours, minute=minutes, second=0, microsecond=0)
                 
-                # If target time is in the past, schedule for next day
                 if target_time <= local_time:
                     target_time += timedelta(days=1)
                 
-                # Calculate seconds until target time
                 seconds_until = (target_time - local_time).total_seconds()
                 
                 if announcement:
                     await message.channel.send(f"✅ Scheduled announcement for {target_time.strftime('%H:%M')} (local time).")
                     print(f"✅ Scheduled announcement by {message.author.name} for {target_time.strftime('%H:%M')}: {announcement}")
                     
-                    # Schedule the announcement
                     async def send_scheduled_message():
                         await asyncio.sleep(seconds_until)
                         embed = discord.Embed(
@@ -171,6 +165,36 @@ async def on_message(message):
                     client.loop.create_task(send_scheduled_message())
                 else:
                     await message.channel.send("⚠️ Please provide a message to announce.")
+            
+            elif message.content.startswith("!gifannounce"):
+                guild = client.get_guild(GUILD_ID)
+                announce_channel = guild.get_channel(ANNOUNCE_CHANNEL_ID)
+                announcement = message.content[len("!gifannounce"):].strip() or "📢 New Announcement!"
+
+                if not message.attachments:
+                    await message.channel.send("⚠️ Please attach a GIF to the message.")
+                    return
+                
+                attachment = message.attachments[0]
+                if not attachment.filename.lower().endswith('.gif'):
+                    await message.channel.send("⚠️ Please attach a valid GIF file.")
+                    return
+
+                try:
+                    # Save the GIF temporarily to send it
+                    gif_file = await attachment.to_file()
+                    embed = discord.Embed(
+                        description=f"## {announcement}",
+                        color=discord.Color.blue(),
+                        timestamp=datetime.utcnow()
+                    )
+                    embed.set_image(url=f"attachment://{attachment.filename}")
+                    await announce_channel.send(embed=embed, file=gif_file)
+                    await message.channel.send("✅ GIF announcement posted to the channel!")
+                    print(f"✅ GIF Announcement made by {message.author.name}: {announcement}")
+                except Exception as e:
+                    await message.channel.send(f"❌ Failed to send GIF announcement: {e}")
+                    print(f"❌ Error posting GIF announcement: {e}")
             
             return
 
@@ -189,6 +213,8 @@ async def on_message(message):
                 await message.channel.send("⚠️ Please provide a message to announce.")
         else:
             await message.channel.send("❌ You do not have permission to use this command.")
+
+    await client.process_commands(message)  # Ensure other commands are processed if you add more
 
 async def status_loop():
     day_statuses = [
